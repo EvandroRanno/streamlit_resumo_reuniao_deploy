@@ -230,7 +230,7 @@ def gerar_resumo(pasta_reuniao):
 
 # MAIN =====================
 def main():
-    st.header('🎙️ Transcrição de Reuniões - QInttus', divider=True)
+    st.header('🎙️ Transcrição de Reuniões - Projeto Integrador IV', divider=True)
     try:
         tab_gravar, tab_selecao = st.tabs(['Gravar Reunião', 'Ver transcrições salvas'])
         with tab_gravar:
