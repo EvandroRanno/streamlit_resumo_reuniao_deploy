@@ -77,7 +77,7 @@ def transcreve_audio(caminho_audio):
 
 def chat_openai(
         mensagem,
-        modelo='gpt-3.5-turbo-1106',
+        modelo='gpt-4o',
     ):
     mensagens = [{'role': 'user', 'content': mensagem}]
     resposta = client.chat.completions.create(
