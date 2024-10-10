@@ -128,17 +128,16 @@ Formato esperado:
 Texto: ####{}####
 '''
 
-def gerar_resumo(texto):
-    transcricao = texto
-    resumo = chat_openai(mensagem=PROMPT.format(transcricao))
+def gerar_resumo(transcricao):
+    resumo = chat_openai(PROMPT.format(transcricao))
     return resumo
 
-def chat_openai(texto):
+def chat_openai(transcricao):
     resposta = client.chat.completions.create(
         model='gpt-4',
-        messages=[{'role': 'user', 'content': texto}],
+        messages=[{'role': 'user', 'content': transcricao}],
     )
-    return resposta.choices[0]['message']['content']
+    return resposta.choices[0].message.content
 
 #Funções para geração dos resumos - FIM
 
