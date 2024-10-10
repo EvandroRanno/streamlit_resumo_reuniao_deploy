@@ -36,7 +36,8 @@ def transcrever_tab_mic():
         key='recebe_audio',
         mode=WebRtcMode.SENDONLY,
         audio_receiver_size=1024,
-        media_stream_constraints={'video': False, 'audio': True}
+        media_stream_constraints={'video': False, 'audio': True},
+        translations={'start': 'Iniciar', 'stop': 'Parar'}
     )
 
     if not webrtc.state.playing:
@@ -47,7 +48,6 @@ def transcrever_tab_mic():
     chunck_audio = pydub.AudioSegment.empty()
     tempo_ultima_transcricao = time()
     while True:
-        
         if webrtc.audio_receiver:
             try:
                 audio_frames = webrtc.audio_receiver.get_frames(timeout=1)
