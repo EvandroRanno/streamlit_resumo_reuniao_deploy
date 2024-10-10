@@ -110,22 +110,6 @@ def transcrever_tab_aud():
 
 #Funções para realizar o resumo da transcrição - INÍCIO
 
-PROMPT = '''
-Identifique o conteúdo do texto delimitado por "####" com base nas seguintes diretrizes:
-
-1. **Resumo detalhado**: Forneça um resumo completo, destacando os principais tópicos discutidos.
-2. **Acordos e decisões**: Liste todas as conclusões e acordos mencionados no texto, utilizando bullet points.
-
-Formato esperado:
-
-- **Resumo do texto**: [Inserir resumo]
-- **Acordos e decisões**:
-  - [Acordo 1]
-  - [Acordo 2]
-  - [Acordo 3]
-
-Texto: ####{}####
-'''
 
 #Funcoes para realizar o resumo da transcrição - FIM
 
