@@ -105,7 +105,8 @@ def transcrever_tab_aud():
 
     if arquivo_audio is not None:
         transcricao_text = transcricao(arquivo_audio)
-        st.write(transcricao_text)
+        resumo_text = gerar_resumo(transcricao_text)
+        st.write(resumo_text)
 
 #Funções de transcricao - FIM
 
@@ -127,6 +128,14 @@ Formato esperado:
 Texto: ####{}####
 '''
 
+def gerar_resumo(texto):
+    prompt = PROMPT.format(texto)
+    resposta = client.completions.create(
+        model='gpt-4',
+        prompt=prompt,
+        n=1
+    )
+    return resposta.choices[0].text.strip()
 
 #Funções para geração dos resumos - FIM
 
