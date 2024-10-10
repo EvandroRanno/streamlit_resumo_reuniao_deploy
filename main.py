@@ -8,9 +8,10 @@ from streamlit_webrtc import WebRtcMode, webrtc_streamer
 from moviepy.editor import VideoFileClip
 import pydub
 
-
+#Carregar variáveis de ambiente
 _ = load_dotenv(find_dotenv())
 
+#Definição das pastas
 PASTA_TEMP = Path(__file__).parent / 'temp'
 PASTA_TEMP.mkdir(exist_ok=True)
 ARQUIVO_AUDIO_TEMP = PASTA_TEMP / 'audio_temp.mp3'
@@ -19,6 +20,7 @@ ARQUIVO_MICROFONE_TEMP = PASTA_TEMP / 'microfone_temp.mp3'
 
 client = openai.OpenAI()
 
+#Funções para transcrever - INÍCIO
 def transcricao(file):
     prompt = 'Você é um assistente útil para transcrever áudios. Sua tarefa é corrigir quaisquer discrepâncias ortográficas no texto transcrito.'
     transcricao = client.audio.transcriptions.create(
@@ -30,12 +32,17 @@ def transcricao(file):
         )
     return transcricao
 
+@st.cache_data
+def get_ice_servers():
+    return [{'urls': ['stun:stun.l.google.com:19302']}]
+
 def transcrever_tab_mic():
     st.markdown('Transcrição do áudio do microfone em tempo real')
     webrtc = webrtc_streamer(
         key='recebe_audio',
         mode=WebRtcMode.SENDONLY,
         audio_receiver_size=1024,
+        rtc_configuration={'iceServers': get_ice_servers()},
         media_stream_constraints={'video': False, 'audio': True},
         translations={'start': 'Iniciar', 'stop': 'Parar'}
     )
@@ -96,7 +103,44 @@ def transcrever_tab_aud():
 
     if not arquivo_audio is None:
         transcricao_text = transcricao(arquivo_audio)
-        st.write(transcricao_text)
+        resumo_text = gerar_resumo(transcricao_text)
+        st.write(resumo_text)
+
+#Funções para transcrever - FIM
+
+#Funções para realizar o resumo da transcrição - INÍCIO
+
+PROMPT = '''
+Identifique o conteúdo do texto delimitado por "####" com base nas seguintes diretrizes:
+
+1. **Resumo detalhado**: Forneça um resumo completo, destacando os principais tópicos discutidos.
+2. **Acordos e decisões**: Liste todas as conclusões e acordos mencionados no texto, utilizando bullet points.
+
+Formato esperado:
+
+- **Resumo do texto**: [Inserir resumo]
+- **Acordos e decisões**:
+  - [Acordo 1]
+  - [Acordo 2]
+  - [Acordo 3]
+
+Texto: ####{}####
+'''
+
+def chat_openai(transcricao):
+    resposta = client.completions.create(
+        model='gpt-4o',
+        messages=[{'role': 'user', 'content': transcricao}]
+    )
+    return resposta.choices[0]['message']['content']
+
+def gerar_resumo(transcricao_text):
+    transcricao_text = transcricao_text
+    resumo_text = chat_openai(mensagem=PROMPT.format(transcricao_text))
+    st.write(resumo_text)
+
+
+#Funcoes para realizar o resumo da transcrição - FIM
 
 def main():
     st.header(body='Projeto Integrador :red[IV] - URI Erechim ⚖️', anchor=False, divider='orange')
