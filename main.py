@@ -9,10 +9,10 @@ from moviepy.editor import VideoFileClip
 import pydub
 from tempfile import gettempdir
 
-#Carregar variáveis de ambiente
+
 _ = load_dotenv(find_dotenv())
 
-#Definição das pastas
+
 PASTA_TEMP = Path(gettempdir())
 PASTA_TEMP.mkdir(exist_ok=True)
 ARQUIVO_AUDIO_TEMP = PASTA_TEMP / 'audio_temp.mp3'
@@ -21,7 +21,7 @@ ARQUIVO_MICROFONE_TEMP = PASTA_TEMP / 'microfone_temp.mp3'
 
 client = openai.OpenAI()
 
-#Funções para transcrever - INÍCIO
+
 def transcricao(file):
     prompt = 'Você é um assistente útil para transcrever áudios. Sua tarefa é corrigir quaisquer discrepâncias ortográficas no texto transcrito.'
     transcricao = client.audio.transcriptions.create(
@@ -105,13 +105,6 @@ def transcrever_tab_aud():
     if arquivo_audio is not None:
         transcricao_text = transcricao(arquivo_audio)
         st.write(transcricao_text)
-
-#Funções para transcrever - FIM
-
-#Funções para realizar o resumo da transcrição - INÍCIO
-
-
-#Funcoes para realizar o resumo da transcrição - FIM
 
 def main():
     st.header(body='Projeto Integrador :red[IV] - URI Erechim ⚖️', anchor=False, divider='orange')
