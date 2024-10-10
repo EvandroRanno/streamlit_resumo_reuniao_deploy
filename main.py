@@ -7,12 +7,13 @@ import streamlit as st
 from streamlit_webrtc import WebRtcMode, webrtc_streamer
 from moviepy.editor import VideoFileClip
 import pydub
+from tempfile import gettempdir
 
 #Carregar variáveis de ambiente
 _ = load_dotenv(find_dotenv())
 
 #Definição das pastas
-PASTA_TEMP = Path(__file__).parent / 'temp'
+PASTA_TEMP = Path(gettempdir())
 PASTA_TEMP.mkdir(exist_ok=True)
 ARQUIVO_AUDIO_TEMP = PASTA_TEMP / 'audio_temp.mp3'
 ARQUIVO_VIDEO_TEMP = PASTA_TEMP / 'video_temp.mp4'
