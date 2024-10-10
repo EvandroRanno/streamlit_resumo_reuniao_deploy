@@ -98,7 +98,8 @@ def transcrever_tab_vid():
 
         with open(ARQUIVO_AUDIO_TEMP, 'rb') as audio_f:
             transcricao_text = transcricao(audio_f)
-            st.write(transcricao_text)
+            resumo_text = gerar_resumo(transcricao_text)
+            st.write(resumo_text)
 
 def transcrever_tab_aud():
     arquivo_audio = st.file_uploader('Faça o upload de um arquivo de áudio em formato MP3 para transcrição', type=['mp3'])
