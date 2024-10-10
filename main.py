@@ -3,8 +3,8 @@ from datetime import datetime
 import time
 import queue
 
-import streamlit as st
 from streamlit_webrtc import WebRtcMode, webrtc_streamer
+import streamlit as st
 
 import pydub
 import openai
@@ -14,44 +14,41 @@ PASTA_ARQUIVOS = Path(__file__).parent / 'arquivos'
 PASTA_ARQUIVOS.mkdir(exist_ok=True)
 
 PROMPT = '''
-Faça o seguinte com a transcrição da reunião delimitada por ####:
+Faça o reumo do texto delimitado por #### 
+O texto é a transcrição de uma reunião.
+O resumo deve contar com os principais assuntos abordados.
+O resumo deve ter no máximo 300 caracteres.
+O resumo deve estar em texto corrido.
+No final, devem ser apresentados todos acordos e combinados 
+feitos na reunião no formato de bullet points.
 
-1. **Resumo da Reunião**: Forneça um resumo detalhado abordando todos os principais assuntos discutidos.
-2. **Acordos da Reunião**: Liste todos os acordos e decisões tomadas em formato de bullet points.
+O formato final que eu desejo é:
 
-Formato desejado:
+Resumo reunião:
+- escrever aqui o resumo.
 
-- Resumo da reunião: [Inserir resumo]
-- Acordos da reunião:
-  - [Acordo 1]
-  - [Acordo 2]
-  - [Acordo 3]
-  - [Acordo n]
+Acordos da Reunião:
+- acrodo 1
+- acordo 2
+- acordo 3
+- acordo n
 
-Texto: ####{}####
+texto: ####{}####
 '''
 
 
 _ = load_dotenv(find_dotenv())
 
 
-def salvar_arquivo(caminho_arquivo, conteudo):
-    if caminho_arquivo is None or conteudo is None:
-        raise ValueError("caminho_arquivo e conteudo não podem ser None")
-    
-    try:
-        with open(caminho_arquivo, 'w') as f:
-            f.write(conteudo)
-    except Exception as e:
-        raise RuntimeError(f"Falha ao salvar {caminho_arquivo}: {e}")
-def ler_arquivo(caminho_arquivo):
-    if caminho_arquivo is None:
-        raise ValueError("caminho_arquivo não pode ser None")
+def salva_arquivo(caminho_arquivo, conteudo):
+    with open(caminho_arquivo, 'w') as f:
+        f.write(conteudo)
 
-    try:
+def le_arquivo(caminho_arquivo):
+    if caminho_arquivo.exists():
         with open(caminho_arquivo) as f:
             return f.read()
-    except FileNotFoundError:
+    else:
         return ''
 
 def listar_reunioes():
@@ -60,72 +57,45 @@ def listar_reunioes():
     lista_reunioes.sort(reverse=True)
     reunioes_dict = {}
     for pasta_reuniao in lista_reunioes:
-        if not pasta_reuniao.is_dir():
-            continue
         data_reuniao = pasta_reuniao.stem
         ano, mes, dia, hora, min, seg = data_reuniao.split('_')
         reunioes_dict[data_reuniao] = f'{ano}/{mes}/{dia} {hora}:{min}:{seg}'
-        titulo_arquivo = pasta_reuniao / 'titulo.txt'
-        if titulo_arquivo.exists():
-            titulo = ler_arquivo(titulo_arquivo)
-            if titulo:
-                reunioes_dict[data_reuniao] += f' - {titulo}'
+        titulo = le_arquivo(pasta_reuniao / 'titulo.txt')
+        if titulo != '':
+            reunioes_dict[data_reuniao] += f' - {titulo}'
     return reunioes_dict
 
 
 # OPENAI UTILS =====================
 client = openai.OpenAI()
 
-def transcrever_audio(caminho_audio, language='pt', response_format='text'):
-    if not caminho_audio:
-        raise ValueError("caminho_audio não pode ser None")
-
+def transcreve_audio(caminho_audio):
+    prompt = 'Você é um assistente útil para transcrever áudios. Sua tarefa é corrigir quaisquer discrepâncias ortográficas no texto transcrito.'
     with open(caminho_audio, 'rb') as arquivo_audio:
-        try:
-            transcricao = client.audio.transcriptions.create(
-                model='whisper-1',
-                language=language,
-                response_format=response_format,
-                file=arquivo_audio,
-            )
-        except Exception as e:
-            raise RuntimeError(f"Falha ao transcrever {caminho_audio}: {e}")
-
+        transcricao = client.audio.transcriptions.create(
+            model='whisper-1',
+            language='pt',
+            response_format='text',
+            file=arquivo_audio,
+            prompt=prompt
+        )
     return transcricao
 
 def chat_openai(
         mensagem,
-        modelo='gpt-4o',
+        modelo='gpt-3.5-turbo-1106',
     ):
-    if not mensagem:
-        raise ValueError("mensagem não pode ser None ou vazia")
-
-    messages = [{'role': 'user', 'content': mensagem}]
-    try:
-        resposta = client.chat.completions.create(
-            model=modelo,
-            messages=messages,
+    mensagens = [{'role': 'user', 'content': mensagem}]
+    resposta = client.chat.completions.create(
+        model=modelo,
+        messages=mensagens,
         )
-        choices = resposta.choices
-        if choices:
-            choice = choices[0]
-            if choice.message:
-                return choice.message.content
-    except Exception as e:
-        raise RuntimeError(f"Falha ao obter resposta da OpenAI: {e}")
-    return ""
+    return resposta.choices[0].message.content
 
-# TAB GRAVAR REUNIÃO =====================
+# TAB GRAVA REUNIÃO =====================
 
-def adicionar_chunck_audio(frames_de_audio, audio_chunck):
-    if frames_de_audio is None:
-        raise ValueError("frames_de_audio não pode ser None")
-    if audio_chunck is None:
-        raise ValueError("audio_chunck não pode ser None")
-
+def adiciona_chunck_audio(frames_de_audio, audio_chunck):
     for frame in frames_de_audio:
-        if frame is None:
-            raise ValueError("frame não pode ser None")
         sound = pydub.AudioSegment(
             data=frame.to_ndarray().tobytes(),
             sample_width=frame.format.bytes,
@@ -135,21 +105,27 @@ def adicionar_chunck_audio(frames_de_audio, audio_chunck):
         audio_chunck += sound
     return audio_chunck
 
-def tab_gravar_reuniao():
+@st.cache_data
+def get_ice_server():
+    return [{'urls': 'stun:stun.l.google.com:19302'}]
+
+def tab_grava_reuniao():
     webrtx_ctx = webrtc_streamer(
         key='recebe_audio',
         mode=WebRtcMode.SENDONLY,
         audio_receiver_size=1024,
+        rtc_configuration={'iceServers': get_ice_server()},
         media_stream_constraints={'video': False, 'audio': True},
+        translations={'start': 'Iniciar', 'stop': 'Parar'}
     )
 
-    if webrtx_ctx is None or not webrtx_ctx.state.playing:
+    if not webrtx_ctx.state.playing:
         return
 
     container = st.empty()
     container.markdown('Comece a falar')
     pasta_reuniao = PASTA_ARQUIVOS / datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-    pasta_reuniao.mkdir(exist_ok=True)
+    pasta_reuniao.mkdir()
 
     ultima_trancricao = time.time()
     audio_completo = pydub.AudioSegment.empty()
@@ -157,89 +133,72 @@ def tab_gravar_reuniao():
     transcricao = ''
 
     while True:
-        if webrtx_ctx.audio_receiver is None:
+        if webrtx_ctx.audio_receiver:
+            try:
+                frames_de_audio = webrtx_ctx.audio_receiver.get_frames(timeout=1)
+            except queue.Empty:
+                time.sleep(0.1)
+                continue
+            audio_completo = adiciona_chunck_audio(frames_de_audio, audio_completo)
+            audio_chunck = adiciona_chunck_audio(frames_de_audio, audio_chunck)
+            if len(audio_chunck) > 0:
+                audio_completo.export(pasta_reuniao / 'audio.mp3')
+                agora = time.time()
+                if agora - ultima_trancricao > 5:
+                    ultima_trancricao = agora
+                    audio_chunck.export(pasta_reuniao / 'audio_temp.mp3')
+                    transcricao_chunck = transcreve_audio(pasta_reuniao / 'audio_temp.mp3')
+                    transcricao += transcricao_chunck
+                    salva_arquivo(pasta_reuniao / 'transcricao.txt', transcricao)
+                    container.markdown(transcricao)
+                    audio_chunck = pydub.AudioSegment.empty()
+        else:
             break
-        try:
-            frames_de_audio = webrtx_ctx.audio_receiver.get_frames(timeout=1)
-        except queue.Empty:
-            time.sleep(0.1)
-            continue
-        audio_completo = adicionar_chunck_audio(frames_de_audio, audio_completo)
-        audio_chunck = adicionar_chunck_audio(frames_de_audio, audio_chunck)
-        if len(audio_chunck) > 0:
-            audio_completo.export(pasta_reuniao / 'audio.mp3')
-            agora = time.time()
-            if agora - ultima_trancricao > 5:
-                ultima_trancricao = agora
-                audio_chunck.export(pasta_reuniao / 'audio_temp.mp3')
-                transcricao_chunck = transcrever_audio(pasta_reuniao / 'audio_temp.mp3')
-                transcricao += transcricao_chunck
-                salvar_arquivo(pasta_reuniao / 'transcricao.txt', transcricao)
-                container.markdown(transcricao)
-                audio_chunck = pydub.AudioSegment.empty()
 
 
 # TAB SELEÇÃO REUNIÃO =====================
 def tab_selecao_reuniao():
     reunioes_dict = listar_reunioes()
-    if not reunioes_dict:
-        st.warning('Nenhuma reunião encontrada')
-        return
-    reuniao_selecionada = st.selectbox('Selecione uma reunião',
-                                      list(reunioes_dict.values()))
-    st.divider()
-    reuniao_data = next((k for k, v in reunioes_dict.items() if v == reuniao_selecionada), None)
-    if not reuniao_data:
-        st.warning('Reunião selecionada não encontrada')
-        return
-    pasta_reuniao = PASTA_ARQUIVOS / reuniao_data
-    if not (pasta_reuniao / 'titulo.txt').exists():
-        st.warning('Adicione um titulo')
-        titulo_reuniao = st.text_input('Título da reunião')
-        if titulo_reuniao:
+    if len(reunioes_dict) > 0:
+        reuniao_selecionada = st.selectbox('Selecione uma reunião',
+                                        list(reunioes_dict.values()))
+        st.divider()
+        reuniao_data = [k for k, v in reunioes_dict.items() if v == reuniao_selecionada][0]
+        pasta_reuniao = PASTA_ARQUIVOS / reuniao_data
+        if not (pasta_reuniao / 'titulo.txt').exists():
+            st.warning('Adicione um titulo')
+            titulo_reuniao = st.text_input('Título da reunião')
             st.button('Salvar',
                       on_click=salvar_titulo,
                       args=(pasta_reuniao, titulo_reuniao))
-    else:
-        titulo = ler_arquivo(pasta_reuniao / 'titulo.txt')
-        transcricao = ler_arquivo(pasta_reuniao / 'transcricao.txt')
-        resumo = ler_arquivo(pasta_reuniao / 'resumo.txt')
-        if not resumo:
-            gerar_resumo(pasta_reuniao)
-            resumo = ler_arquivo(pasta_reuniao / 'resumo.txt')
-        st.markdown(f'## {titulo}')
-        st.markdown(f'{resumo}')
-        st.markdown(f'Transcricao: {transcricao}')
+        else:
+            titulo = le_arquivo(pasta_reuniao / 'titulo.txt')
+            transcricao = le_arquivo(pasta_reuniao / 'transcricao.txt')
+            resumo = le_arquivo(pasta_reuniao / 'resumo.txt')
+            if resumo == '':
+                gerar_resumo(pasta_reuniao)
+                resumo = le_arquivo(pasta_reuniao / 'resumo.txt')
+            st.markdown(f'## {titulo}')
+            st.markdown(f'{resumo}')
+            st.markdown(f'Transcricao: {transcricao}')
         
 def salvar_titulo(pasta_reuniao, titulo):
-    if pasta_reuniao is None:
-        raise ValueError("pasta_reuniao não pode ser None")
-    if titulo is None:
-        raise ValueError("titulo não pode ser None")
-    salvar_arquivo(pasta_reuniao / 'titulo.txt', titulo)
+    salva_arquivo(pasta_reuniao / 'titulo.txt', titulo)
 
 def gerar_resumo(pasta_reuniao):
-    transcricao = ler_arquivo(pasta_reuniao / 'transcricao.txt')
-    if transcricao is None:
-        raise ValueError("Transcricao not found")
+    transcricao = le_arquivo(pasta_reuniao / 'transcricao.txt')
     resumo = chat_openai(mensagem=PROMPT.format(transcricao))
-    if resumo is None:
-        raise RuntimeError("Falha ao gerar resumo")
-    salvar_arquivo(pasta_reuniao / 'resumo.txt', resumo)
+    salva_arquivo(pasta_reuniao / 'resumo.txt', resumo)
 
 
 # MAIN =====================
 def main():
-    st.header('🎙️ Transcrição de Reuniões - Projeto Integrador IV', divider=True)
-    try:
-        tab_gravar, tab_selecao = st.tabs(['Gravar Reunião', 'Ver transcrições salvas'])
-        with tab_gravar:
-            tab_gravar_reuniao()
-        with tab_selecao:
-            tab_selecao_reuniao()
-    except Exception as e:
-        st.error(f'Ocorreu um erro: {e}')
-
+    st.header('Bem-vindo ao MeetGPT 🎙️', divider=True)
+    tab_gravar, tab_selecao = st.tabs(['Gravar Reunião', 'Ver transcrições salvas'])
+    with tab_gravar:
+        tab_grava_reuniao()
+    with tab_selecao:
+        tab_selecao_reuniao()
 
 if __name__ == '__main__':
     main()
