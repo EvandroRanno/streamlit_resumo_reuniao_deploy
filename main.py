@@ -103,13 +103,8 @@ def transcrever_tab_aud():
     arquivo_audio = st.file_uploader('Faça o upload de um arquivo de áudio em formato MP3 para transcrição', type=['mp3'])
 
     if arquivo_audio is not None:
-        with open(ARQUIVO_AUDIO_TEMP, 'wb') as audio_f:
-            audio_f.write(arquivo_audio.read())
-        with open(ARQUIVO_AUDIO_TEMP, 'rb') as audio_f:
-            transcricao_text = transcricao(audio_f)
-
-        resumo_text = gerar_resumo(transcricao_text)
-        st.write(resumo_text)
+        transcricao_text = transcricao(arquivo_audio)
+        st.write(transcricao_text)
 
 #Funções para transcrever - FIM
 
@@ -131,19 +126,6 @@ Formato esperado:
 
 Texto: ####{}####
 '''
-
-def chat_openai(transcricao):
-    resposta = client.completions.create(
-        model='gpt-4',
-        messages=[{'role': 'user', 'content': transcricao}]
-    )
-    return resposta.choices[0]['message']['content']
-
-def gerar_resumo(transcricao_text):
-    prompt_formatado = PROMPT.format(transcricao_text)
-    resumo_text = chat_openai(prompt_formatado)
-    return resumo_text
-
 
 #Funcoes para realizar o resumo da transcrição - FIM
 
