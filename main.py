@@ -137,7 +137,7 @@ def chat_openai(transcricao):
 def gerar_resumo(transcricao_text):
     transcricao_text = transcricao_text
     resumo_text = chat_openai(mensagem=PROMPT.format(transcricao_text))
-    st.write(resumo_text)
+    return resumo_text
 
 
 #Funcoes para realizar o resumo da transcrição - FIM
