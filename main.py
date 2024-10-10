@@ -14,26 +14,20 @@ PASTA_ARQUIVOS = Path(__file__).parent / 'arquivos'
 PASTA_ARQUIVOS.mkdir(exist_ok=True)
 
 PROMPT = '''
-Faça o reumo do texto delimitado por #### 
-O texto é a transcrição de uma reunião.
-O resumo deve contar com os principais assuntos abordados.
-O resumo deve ter no máximo 300 caracteres.
-O resumo deve estar em texto corrido.
-No final, devem ser apresentados todos acordos e combinados 
-feitos na reunião no formato de bullet points.
+Identifique o conteúdo do texto delimitado por "####" com base nas seguintes diretrizes:
 
-O formato final que eu desejo é:
+1. **Resumo detalhado**: Forneça um resumo completo, destacando os principais tópicos discutidos.
+2. **Acordos e decisões**: Liste todas as conclusões e acordos mencionados no texto, utilizando bullet points.
 
-Resumo reunião:
-- escrever aqui o resumo.
+Formato esperado:
 
-Acordos da Reunião:
-- acrodo 1
-- acordo 2
-- acordo 3
-- acordo n
+- **Resumo do texto**: [Inserir resumo]
+- **Acordos e decisões**:
+  - [Acordo 1]
+  - [Acordo 2]
+  - [Acordo 3]
 
-texto: ####{}####
+Texto: ####{}####
 '''
 
 
@@ -193,7 +187,8 @@ def gerar_resumo(pasta_reuniao):
 
 # MAIN =====================
 def main():
-    st.header('Bem-vindo ao MeetGPT 🎙️', divider=True)
+    st.header(body='Projeto Integrador :red[IV] - URI Erechim ⚖️', anchor=False, divider='orange')
+    st.markdown(body='💻 **Integrantes:** Ademir, Ana M., Basi, Denis, Evandro, :rainbow[***João***], Kauan, Lucas')
     tab_gravar, tab_selecao = st.tabs(['Gravar Reunião', 'Ver transcrições salvas'])
     with tab_gravar:
         tab_grava_reuniao()
