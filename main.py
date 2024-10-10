@@ -134,7 +134,7 @@ def gerar_resumo(texto):
         model='gpt-4',
         messages=[{'role': 'user', 'content': prompt}]
     )
-    return resposta.choices[0].message['content']
+    return resposta['choices'][0]['message']['content']
 
 #Funções para geração dos resumos - FIM
 
