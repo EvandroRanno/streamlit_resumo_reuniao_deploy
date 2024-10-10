@@ -130,12 +130,11 @@ Texto: ####{}####
 
 def gerar_resumo(texto):
     prompt = PROMPT.format(texto)
-    resposta = client.completions.create(
+    resposta = client.chat.completions.create(
         model='gpt-4',
-        prompt=prompt,
-        n=1
+        messages=[{'role': 'user', 'content': prompt}]
     )
-    return resposta.choices[0].text.strip()
+    return resposta.choices[0].message['content']
 
 #Funções para geração dos resumos - FIM
 
