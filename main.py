@@ -129,10 +129,14 @@ Texto: ####{}####
 '''
 
 def gerar_resumo(texto):
-    prompt = PROMPT.format(texto)
+    transcricao = texto
+    resumo = chat_openai(mensagem=PROMPT.format(transcricao))
+    return resumo
+
+def chat_openai(texto):
     resposta = client.chat.completions.create(
         model='gpt-4',
-        messages=[{'role': 'user', 'content': prompt}]
+        messages=[{'role': 'user', 'content': texto}],
     )
     return resposta.choices[0]['message']['content']
 
