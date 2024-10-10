@@ -9,19 +9,20 @@ from moviepy.editor import VideoFileClip
 import pydub
 from tempfile import gettempdir
 
-
+#Carregar variáveis de ambiente
 _ = load_dotenv(find_dotenv())
 
-
+#Cria pastas temporarias
 PASTA_TEMP = Path(gettempdir())
 PASTA_TEMP.mkdir(exist_ok=True)
 ARQUIVO_AUDIO_TEMP = PASTA_TEMP / 'audio_temp.mp3'
 ARQUIVO_VIDEO_TEMP = PASTA_TEMP / 'video_temp.mp4'
 ARQUIVO_MICROFONE_TEMP = PASTA_TEMP / 'microfone_temp.mp3'
 
+#Carregar API
 client = openai.OpenAI()
 
-
+#Funções de transcricao - INÍCIO
 def transcricao(file):
     prompt = 'Você é um assistente útil para transcrever áudios. Sua tarefa é corrigir quaisquer discrepâncias ortográficas no texto transcrito.'
     transcricao = client.audio.transcriptions.create(
@@ -105,6 +106,29 @@ def transcrever_tab_aud():
     if arquivo_audio is not None:
         transcricao_text = transcricao(arquivo_audio)
         st.write(transcricao_text)
+
+#Funções de transcricao - FIM
+
+#Funções para geração dos resumos - INÍCIO
+PROMPT = '''
+Identifique o conteúdo do texto delimitado por "####" com base nas seguintes diretrizes:
+
+1. **Resumo detalhado**: Forneça um resumo completo, destacando os principais tópicos discutidos.
+2. **Acordos e decisões**: Liste todas as conclusões e acordos mencionados no texto, utilizando bullet points.
+
+Formato esperado:
+
+- **Resumo do texto**: [Inserir resumo]
+- **Acordos e decisões**:
+  - [Acordo 1]
+  - [Acordo 2]
+  - [Acordo 3]
+
+Texto: ####{}####
+'''
+
+
+#Funções para geração dos resumos - FIM
 
 def main():
     st.header(body='Projeto Integrador :red[IV] - URI Erechim ⚖️', anchor=False, divider='orange')
