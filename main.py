@@ -135,8 +135,8 @@ def chat_openai(transcricao):
     return resposta.choices[0]['message']['content']
 
 def gerar_resumo(transcricao_text):
-    transcricao_text = transcricao_text
-    resumo_text = chat_openai(mensagem=PROMPT.format(transcricao_text))
+    prompt_formatado = PROMPT.format(transcricao_text)
+    resumo_text = chat_openai(prompt_formatado)
     return resumo_text
 
 
