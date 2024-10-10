@@ -1,199 +1,114 @@
 from pathlib import Path
-from datetime import datetime
-import time
 import queue
-
-from streamlit_webrtc import WebRtcMode, webrtc_streamer
-import streamlit as st
-
-import pydub
+from time import sleep, time
 import openai
 from dotenv import load_dotenv, find_dotenv
-
-PASTA_ARQUIVOS = Path(__file__).parent / 'arquivos'
-PASTA_ARQUIVOS.mkdir(exist_ok=True)
-
-PROMPT = '''
-Identifique o conteúdo do texto delimitado por "####" com base nas seguintes diretrizes:
-
-1. **Resumo detalhado**: Forneça um resumo completo, destacando os principais tópicos discutidos.
-2. **Acordos e decisões**: Liste todas as conclusões e acordos mencionados no texto, utilizando bullet points.
-
-Formato esperado:
-
-- **Resumo do texto**: [Inserir resumo]
-- **Acordos e decisões**:
-  - [Acordo 1]
-  - [Acordo 2]
-  - [Acordo 3]
-
-Texto: ####{}####
-'''
+import streamlit as st
+from streamlit_webrtc import WebRtcMode, webrtc_streamer
+from moviepy.editor import VideoFileClip
+import pydub
 
 
 _ = load_dotenv(find_dotenv())
 
+PASTA_TEMP = Path(__file__).parent / 'temp'
+PASTA_TEMP.mkdir(exist_ok=True)
+ARQUIVO_AUDIO_TEMP = PASTA_TEMP / 'audio_temp.mp3'
+ARQUIVO_VIDEO_TEMP = PASTA_TEMP / 'video_temp.mp4'
+ARQUIVO_MICROFONE_TEMP = PASTA_TEMP / 'microfone_temp.mp3'
 
-def salva_arquivo(caminho_arquivo, conteudo):
-    with open(caminho_arquivo, 'w') as f:
-        f.write(conteudo)
-
-def le_arquivo(caminho_arquivo):
-    if caminho_arquivo.exists():
-        with open(caminho_arquivo) as f:
-            return f.read()
-    else:
-        return ''
-
-def listar_reunioes():
-    lista_reunioes = PASTA_ARQUIVOS.glob('*')
-    lista_reunioes = list(lista_reunioes)
-    lista_reunioes.sort(reverse=True)
-    reunioes_dict = {}
-    for pasta_reuniao in lista_reunioes:
-        data_reuniao = pasta_reuniao.stem
-        ano, mes, dia, hora, min, seg = data_reuniao.split('_')
-        reunioes_dict[data_reuniao] = f'{ano}/{mes}/{dia} {hora}:{min}:{seg}'
-        titulo = le_arquivo(pasta_reuniao / 'titulo.txt')
-        if titulo != '':
-            reunioes_dict[data_reuniao] += f' - {titulo}'
-    return reunioes_dict
-
-
-# OPENAI UTILS =====================
 client = openai.OpenAI()
 
-def transcreve_audio(caminho_audio):
+def transcricao(file):
     prompt = 'Você é um assistente útil para transcrever áudios. Sua tarefa é corrigir quaisquer discrepâncias ortográficas no texto transcrito.'
-    with open(caminho_audio, 'rb') as arquivo_audio:
-        transcricao = client.audio.transcriptions.create(
+    transcricao = client.audio.transcriptions.create(
             model='whisper-1',
             language='pt',
             response_format='text',
-            file=arquivo_audio,
+            file=file,
             prompt=prompt
         )
     return transcricao
 
-def chat_openai(
-        mensagem,
-        modelo='gpt-4o',
-    ):
-    mensagens = [{'role': 'user', 'content': mensagem}]
-    resposta = client.chat.completions.create(
-        model=modelo,
-        messages=mensagens,
-        )
-    return resposta.choices[0].message.content
-
-# TAB GRAVA REUNIÃO =====================
-
-def adiciona_chunck_audio(frames_de_audio, audio_chunck):
-    for frame in frames_de_audio:
-        sound = pydub.AudioSegment(
-            data=frame.to_ndarray().tobytes(),
-            sample_width=frame.format.bytes,
-            frame_rate=frame.sample_rate,
-            channels=len(frame.layout.channels),
-        )
-        audio_chunck += sound
-    return audio_chunck
-
-@st.cache_data
-def get_ice_server():
-    return [{'urls': 'stun:stun.l.google.com:19302'}]
-
-def tab_grava_reuniao():
-    webrtx_ctx = webrtc_streamer(
+def transcrever_tab_mic():
+    st.markdown('Transcrição do áudio do microfone em tempo real')
+    webrtc = webrtc_streamer(
         key='recebe_audio',
         mode=WebRtcMode.SENDONLY,
         audio_receiver_size=1024,
-        rtc_configuration={'iceServers': get_ice_server()},
         media_stream_constraints={'video': False, 'audio': True},
         translations={'start': 'Iniciar', 'stop': 'Parar'}
     )
 
-    if not webrtx_ctx.state.playing:
+    if not webrtc.state.playing:
         return
-
+    
     container = st.empty()
-    container.markdown('Comece a falar')
-    pasta_reuniao = PASTA_ARQUIVOS / datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
-    pasta_reuniao.mkdir()
-
-    ultima_trancricao = time.time()
-    audio_completo = pydub.AudioSegment.empty()
-    audio_chunck = pydub.AudioSegment.empty()
-    transcricao = ''
-
+    container.markdown('**Transcrição iniciada**')
+    chunck_audio = pydub.AudioSegment.empty()
+    tempo_ultima_transcricao = time()
     while True:
-        if webrtx_ctx.audio_receiver:
+        if webrtc.audio_receiver:
             try:
-                frames_de_audio = webrtx_ctx.audio_receiver.get_frames(timeout=1)
+                audio_frames = webrtc.audio_receiver.get_frames(timeout=1)
             except queue.Empty:
-                time.sleep(0.1)
+                sleep(0.1)
                 continue
-            audio_completo = adiciona_chunck_audio(frames_de_audio, audio_completo)
-            audio_chunck = adiciona_chunck_audio(frames_de_audio, audio_chunck)
-            if len(audio_chunck) > 0:
-                audio_completo.export(pasta_reuniao / 'audio.mp3')
-                agora = time.time()
-                if agora - ultima_trancricao > 5:
-                    ultima_trancricao = agora
-                    audio_chunck.export(pasta_reuniao / 'audio_temp.mp3')
-                    transcricao_chunck = transcreve_audio(pasta_reuniao / 'audio_temp.mp3')
-                    transcricao += transcricao_chunck
-                    salva_arquivo(pasta_reuniao / 'transcricao.txt', transcricao)
-                    container.markdown(transcricao)
-                    audio_chunck = pydub.AudioSegment.empty()
+
+            for audio_frame in audio_frames:
+                sound = pydub.AudioSegment(
+                    data=audio_frame.to_ndarray().tobytes(),
+                    sample_width=audio_frame.format.bytes,
+                    frame_rate=audio_frame.rate,
+                    channels=len(audio_frame.layout.channels)
+                )
+                chunck_audio += sound
+            
+            agora = time()
+            
+            if len(chunck_audio) > 0 and agora - tempo_ultima_transcricao > 5:
+                tempo_ultima_transcricao = agora
+                chunck_audio.export(ARQUIVO_MICROFONE_TEMP, format='mp3')
+                chunck_audio = pydub.AudioSegment.empty() #Reinicia para nova gravação
+
+                with open(ARQUIVO_MICROFONE_TEMP, 'rb') as audio_f:
+                    transcricao_text = transcricao(audio_f)
+                    container.write(transcricao_text)
         else:
             break
 
+def transcrever_tab_vid():
+    arquivo_video = st.file_uploader('Faça o upload de um arquivo de vídeo em formato MP4 para transcrição', type=['mp4'])
 
-# TAB SELEÇÃO REUNIÃO =====================
-def tab_selecao_reuniao():
-    reunioes_dict = listar_reunioes()
-    if len(reunioes_dict) > 0:
-        reuniao_selecionada = st.selectbox('Selecione uma reunião',
-                                        list(reunioes_dict.values()))
-        st.divider()
-        reuniao_data = [k for k, v in reunioes_dict.items() if v == reuniao_selecionada][0]
-        pasta_reuniao = PASTA_ARQUIVOS / reuniao_data
-        if not (pasta_reuniao / 'titulo.txt').exists():
-            st.warning('Adicione um titulo')
-            titulo_reuniao = st.text_input('Título da reunião')
-            st.button('Salvar',
-                      on_click=salvar_titulo,
-                      args=(pasta_reuniao, titulo_reuniao))
-        else:
-            titulo = le_arquivo(pasta_reuniao / 'titulo.txt')
-            transcricao = le_arquivo(pasta_reuniao / 'transcricao.txt')
-            resumo = le_arquivo(pasta_reuniao / 'resumo.txt')
-            if resumo == '':
-                gerar_resumo(pasta_reuniao)
-                resumo = le_arquivo(pasta_reuniao / 'resumo.txt')
-            st.markdown(f'## {titulo}')
-            st.markdown(f'{resumo}')
-            st.markdown(f'Transcricao: {transcricao}')
-        
-def salvar_titulo(pasta_reuniao, titulo):
-    salva_arquivo(pasta_reuniao / 'titulo.txt', titulo)
+    if not arquivo_video is None:
+        with open(ARQUIVO_VIDEO_TEMP, 'wb') as video_f:
+            video_f.write(arquivo_video.read())
 
-def gerar_resumo(pasta_reuniao):
-    transcricao = le_arquivo(pasta_reuniao / 'transcricao.txt')
-    resumo = chat_openai(mensagem=PROMPT.format(transcricao))
-    salva_arquivo(pasta_reuniao / 'resumo.txt', resumo)
+        clip = VideoFileClip(str(ARQUIVO_VIDEO_TEMP))
+        clip.audio.write_audiofile(str(ARQUIVO_AUDIO_TEMP))
 
+        with open(ARQUIVO_AUDIO_TEMP, 'rb') as audio_f:
+            transcricao_text = transcricao(audio_f)
+            st.write(transcricao_text)
 
-# MAIN =====================
+def transcrever_tab_aud():
+    arquivo_audio = st.file_uploader('Faça o upload de um arquivo de áudio em formato MP3 para transcrição', type=['mp3'])
+
+    if not arquivo_audio is None:
+        transcricao_text = transcricao(arquivo_audio)
+        st.write(transcricao_text)
+
 def main():
     st.header(body='Projeto Integrador :red[IV] - URI Erechim ⚖️', anchor=False, divider='orange')
     st.markdown(body='💻 **Integrantes:** Ademir, Ana M., Basi, Denis, Evandro, :rainbow[***João***], Kauan, Lucas')
-    tab_gravar, tab_selecao = st.tabs(['Gravar Reunião', 'Ver transcrições salvas'])
-    with tab_gravar:
-        tab_grava_reuniao()
-    with tab_selecao:
-        tab_selecao_reuniao()
+    tab_mic, tab_vid, tab_aud = st.tabs(['Microfone', 'Vídeo', 'Áudio'])
+    with tab_mic:
+        transcrever_tab_mic()
+    with tab_vid:
+        transcrever_tab_vid()
+    with tab_aud:
+        transcrever_tab_aud()
+
 
 if __name__ == '__main__':
     main()
