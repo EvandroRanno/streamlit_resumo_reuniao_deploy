@@ -101,8 +101,12 @@ def transcrever_tab_vid():
 def transcrever_tab_aud():
     arquivo_audio = st.file_uploader('Faça o upload de um arquivo de áudio em formato MP3 para transcrição', type=['mp3'])
 
-    if not arquivo_audio is None:
-        transcricao_text = transcricao(arquivo_audio)
+    if arquivo_audio is not None:
+        with open(ARQUIVO_AUDIO_TEMP, 'wb') as audio_f:
+            audio_f.write(arquivo_audio.read())
+        with open(ARQUIVO_AUDIO_TEMP, 'rb') as audio_f:
+            transcricao_text = transcricao(audio_f)
+
         resumo_text = gerar_resumo(transcricao_text)
         st.write(resumo_text)
 
@@ -129,7 +133,7 @@ Texto: ####{}####
 
 def chat_openai(transcricao):
     resposta = client.completions.create(
-        model='gpt-4o',
+        model='gpt-4',
         messages=[{'role': 'user', 'content': transcricao}]
     )
     return resposta.choices[0]['message']['content']
