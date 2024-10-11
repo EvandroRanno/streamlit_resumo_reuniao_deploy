@@ -116,7 +116,8 @@ PROMPT = '''
 Identifique o conteúdo do texto delimitado por "####" com base nas seguintes diretrizes:
 
 1. **Resumo detalhado**: Forneça um resumo completo, destacando os principais tópicos discutidos.
-2. **Acordos e decisões**: Liste todas as conclusões e acordos mencionados no texto, utilizando bullet points.
+2. **Acordos e decisões**: Liste todas as conclusões e acordos mencionados no texto, utilizando bullet points. Caso não tenha nenhuma
+consideração a fazer nessa parte, deixe-a em branco.
 
 Formato esperado:
 
@@ -144,7 +145,7 @@ def chat_openai(transcricao):
 
 def main():
     st.header(body='Projeto Integrador :red[IV] - URI Erechim ⚖️', anchor=False, divider='orange')
-    st.markdown(body='💻 **Integrantes:** Ademir, Ana M., Basi, Denis, Evandro, :rainbow[***João***], Kauan, Lucas')
+    st.markdown(body='💻 **Integrantes:** Ademir, Ana M., Denis, Evandro, :rainbow[***João***], Kauan, Lucas e Lucimar')
     tab_mic, tab_vid, tab_aud = st.tabs(['Microfone', 'Vídeo', 'Áudio'])
     with tab_mic:
         transcrever_tab_mic()
