@@ -95,7 +95,7 @@ def transcrever_tab_aud():
     if arquivo_audio is not None:
         transcricao_text = transcricao(arquivo_audio)
         resumo_text = gerar_resumo(transcricao_text, 'transcricao')
-        st.write('Transcrição:', transcricao_text)
+        st.write('**Transcrição:**', transcricao_text)
         st.write(resumo_text)
 
 def transcrever_tab_vid():
@@ -111,7 +111,7 @@ def transcrever_tab_vid():
         with open(ARQUIVO_AUDIO_TEMP, 'rb') as audio_f:
             transcricao_text = transcricao(audio_f)
             resumo_text = gerar_resumo(transcricao_text, 'transcricao')
-            st.write('Transcrição:', transcricao_text)
+            st.write('**Transcrição:**', transcricao_text)
             st.write(resumo_text)
 
 #Funções de transcricao - FIM
