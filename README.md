@@ -24,7 +24,7 @@ Essa aplicação foi desenvolvida como parte do Projeto Integrador IV do curso d
 
 1. Clone este repositório:
    ```bash
-   git clone https://github.com/seu-usuario/projeto-integrador-IV.git
+   git clone https://github.com/EvandroRanno/streamlit_resumo_reuniao_deploy.git
 
 2. Instale as dependências:
    ```bash
