@@ -1,28 +1,46 @@
-# Projeto Integrador IV - URI Erechim
+# Projeto Integrador IV - URI Erechim ⚖️
 
-Essa aplicação foi desenvolvida como parte do Projeto Integrador IV do curso de Direito da URI/Erechim. O objetivo é demonstrar que mesmo com um código simplório é possível implementar soluções práticas para o dia a dia da profissão. A proposta do projeto é mostrar como a tecnologia pode ser utilizada para criar ferramentas que facilitem o trabalho, estimulando a criatividade como o principal motor de inovação e crescimento.
+
+## Descrição
+
+Este projeto foi desenvolvido para o **Projeto Integrador IV** do curso de Direito da URI Erechim. O objetivo principal é demonstrar como a tecnologia pode ser usada no contexto jurídico para facilitar tarefas do dia a dia, como a transcrição de áudios e vídeos e a extração de informações de petições. A aplicação faz uso da API do OpenAI para transcrição de áudio, resumos automáticos e extração de dados de PDFs, além de permitir a interação com a entrada de áudio em tempo real via microfone.
+
 
 ## Funcionalidades
 
-- Transcrição de áudios de reuniões e afins.
-- Geração automática de resumos com identificação de tópicos e acordos discutidos.
-- Suporte para upload de arquivos de áudio e vídeo, além de transcrição em tempo real por microfone.
+### 1. **Transcrição de Áudio e Vídeo**
+   - Transcrição de arquivos de áudio em formato **MP3** e vídeos em formato **MP4**.
+   - Resumo automático dos áudios e vídeos transcritos, destacando pontos importantes e decisões.
 
-## Como usar
+### 2. **Transcrição de Áudio em Tempo Real**
+   - Realiza a transcrição em tempo real do áudio capturado pelo microfone.
+   - O áudio transcrito é exibido imediatamente na interface do Streamlit.
 
-1. Faça o upload de um arquivo de áudio ou vídeo em formato MP3 ou MP4, ou utilize a transcrição em tempo real pelo microfone.
-2. O sistema irá transcrever o conteúdo e gerar um resumo dos principais pontos, além de listar acordos e decisões discutidas no áudio.
+### 3. **Extração de Informações de Petições em PDF**
+   - Upload de arquivos **PDF** contendo petições iniciais.
+   - O texto da petição é processado e extraído automaticamente.
+   - O sistema fornece um resumo da petição, além de identificar algumas informações para auxiliar no preenchimento pelo advogado.
+
 
 ## Requisitos
 
-- Python 3.12+
-- Streamlit
-- OpenAI API
-- Pydub
+Para executar este projeto, os seguintes pacotes e bibliotecas são necessários:
+
+- Python 3.10 ou superior
+- Bibliotecas Python:
+  - `streamlit`
+  - `streamlit-webrtc`
+  - `moviepy`
+  - `pydub`
+  - `openai`
+  - `PyPDF2`
+  - `dotenv`
+  - `pathlib`
+  - `re`
 
 ## Instalação
 
-1. Clone este repositório:
+1. Clone o repositório para sua máquina local:
    ```bash
    git clone https://github.com/EvandroRanno/streamlit_resumo_reuniao_deploy.git
 
@@ -30,9 +48,14 @@ Essa aplicação foi desenvolvida como parte do Projeto Integrador IV do curso d
    ```bash
    pip install -r requirements.txt
 
-3. Execute a aplicação:
+3. Crie um arquivo .env na raiz do projeto e configure sua chave de API do OpenAI:
+   ```bash
+   OPENAI_API_KEY=digite_sua_API_aqui
+
+4. Execute a aplicação:
    ```bash
    streamlit run main.py
+
 
 ## Integrantes
 Ademir, Ana M., Denis, Evandro, João Eduardo, Lucas e Lucimar
