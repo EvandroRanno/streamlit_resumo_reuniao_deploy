@@ -56,6 +56,5 @@ Para executar este projeto, os seguintes pacotes e bibliotecas são necessários
    ```bash
    streamlit run main.py
 
-
 ## Integrantes
 Ademir, Ana M., Denis, Evandro, João Eduardo, Lucas e Lucimar

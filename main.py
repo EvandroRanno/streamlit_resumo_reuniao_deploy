@@ -185,7 +185,7 @@ def gerar_resumo(texto, tipo):
         PROMPT = PROMPT_PDF
 
     resposta = client.chat.completions.create(
-        model='gpt-4',
+        model='gpt-4o',
         messages=[{'role': 'user', 'content': PROMPT.format(texto)}]
     )
     return resposta.choices[0].message.content
