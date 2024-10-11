@@ -89,7 +89,7 @@ def transcrever_tab_mic():
 def transcrever_tab_vid():
     arquivo_video = st.file_uploader('Faça o upload de um arquivo de vídeo em formato MP4 para transcrição', type=['mp4'])
 
-    if not arquivo_video is None:
+    if arquivo_video is not None:
         with open(ARQUIVO_VIDEO_TEMP, 'wb') as video_f:
             video_f.write(arquivo_video.read())
 
@@ -115,31 +115,26 @@ def transcrever_tab_aud():
 
 #Funções para geração dos resumos - INÍCIO
 PROMPT = '''
-Identifique o conteúdo do texto delimitado por "####" com base nas seguintes diretrizes:
+Analise o conteúdo do texto delimitado por "####" seguindo as diretrizes abaixo:
 
-1. **Resumo detalhado**: Forneça um resumo completo, destacando os principais tópicos discutidos.
-2. **Acordos e decisões**: Liste todas as conclusões e acordos mencionados no texto, utilizando bullet points. Caso não tenha nenhuma
-consideração a fazer nessa parte, deixe-a em branco.
+1. **Resumo completo**: Elabore um resumo detalhado, destacando os principais temas, tópicos e informações relevantes presentes no texto.
+2. **Acordos e decisões**: Identifique e liste em forma de bullet points todas as conclusões, decisões e acordos mencionados. Caso não haja nenhum acordo ou decisão relevante, deixe essa seção em branco.
 
-Formato esperado:
+Utilize o seguinte formato para a resposta:
 
-- **Resumo do texto**: [Inserir resumo]
+- **Resumo do texto**: [Inserir o resumo aqui]
 - **Acordos e decisões**:
-  - [Acordo 1]
-  - [Acordo 2]
-  - [Acordo 3]
+  - [Inserir acordo ou decisão 1]
+  - [Inserir acordo ou decisão 2]
+  - [Inserir acordo ou decisão n]
 
-Texto: ####{}####
+Texto para análise: ####{}####
 '''
 
 def gerar_resumo(transcricao):
-    resumo = chat_openai(PROMPT.format(transcricao))
-    return resumo
-
-def chat_openai(transcricao):
     resposta = client.chat.completions.create(
         model='gpt-4',
-        messages=[{'role': 'user', 'content': transcricao}],
+        messages=[{'role': 'user', 'content': PROMPT.format(transcricao)}]
     )
     return resposta.choices[0].message.content
 
