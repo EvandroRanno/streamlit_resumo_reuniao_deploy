@@ -141,7 +141,8 @@ def limpar_texto(texto):
     return texto_limpo
 
 def escapar_caracteres_markdown(texto):
-    return sub(r'([*_#])', r'\\\1', texto)
+    caracteres_especiais = r'([*_#\[\]\(\)!~>\+\-\.`$^&])'
+    return sub(caracteres_especiais, r'\\\1', texto)
 
 #Funções para extrair informações limpas do PDF - FIM
 
