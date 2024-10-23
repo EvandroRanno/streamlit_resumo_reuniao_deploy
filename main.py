@@ -8,7 +8,7 @@ from streamlit_webrtc import WebRtcMode, webrtc_streamer
 from moviepy.editor import VideoFileClip
 import pydub
 from tempfile import gettempdir
-from PyPDF2 import PdfReader
+import pdfplumber
 from re import sub
 
 
@@ -124,9 +124,9 @@ def info_tab_peticao_inicial():
     if arquivo_pdf is not None:
         info_pdf = extrair_info_pdf(arquivo_pdf)
         info_pdf = limpar_texto(info_pdf)
-        info_pdf = escapar_caracteres_markdown(info_pdf)
         resumo_text = gerar_resumo(info_pdf, 'pdf')
-        st.write(resumo_text)
+        resumo_text = escapar_caracteres_markdown(resumo_text)
+        st.markdown(resumo_text)
 
 def extrair_info_pdf(arquivo_pdf):
     pdf = PdfReader(arquivo_pdf)
@@ -136,12 +136,22 @@ def extrair_info_pdf(arquivo_pdf):
         texto += pdf.pages[i].extract_text()
     return texto
 
+def extrair_info_pdf(arquivo_pdf):
+    texto = ''
+    with pdfplumber.open(arquivo_pdf) as pdf:
+        for pagina in pdf.pages:
+            texto_pagina = pagina.extract_text()
+            if texto_pagina:
+                # Adiciona uma quebra de linha após o texto de cada página
+                texto += texto_pagina + '\n'
+    return texto
+
 def limpar_texto(texto):
     texto_limpo = ' '.join(texto.split())
     return texto_limpo
 
 def escapar_caracteres_markdown(texto):
-    caracteres_especiais = r'([*_#\[\]\(\)!~>\+\-\.`$^&])'
+    caracteres_especiais = r'([$@])'
     return sub(caracteres_especiais, r'\\\1', texto)
 
 #Funções para extrair informações limpas do PDF - FIM
