@@ -129,14 +129,6 @@ def info_tab_peticao_inicial():
         st.markdown(resumo_text)
 
 def extrair_info_pdf(arquivo_pdf):
-    pdf = PdfReader(arquivo_pdf)
-    texto = ''
-
-    for i in range(len(pdf.pages)):
-        texto += pdf.pages[i].extract_text()
-    return texto
-
-def extrair_info_pdf(arquivo_pdf):
     texto = ''
     with pdfplumber.open(arquivo_pdf) as pdf:
         for pagina in pdf.pages:
