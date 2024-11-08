@@ -42,7 +42,7 @@ def transcrever_tab_aud():
         st.write(resumo_text)
 
 def transcrever_tab_vid():
-    arquivo_video = st.file_uploader('Faça o upload de um arquivo de vídeo em formato MP4 para transcrição', type=['mp4'])
+    arquivo_video = st.file_uploader('Faça o upload de um arquivo de vídeo em formato MP4 ou MOV para transcrição', type=['mp4', 'mov'])
 
     if arquivo_video is not None:
         with open(ARQUIVO_VIDEO_TEMP, 'wb') as video_f:
