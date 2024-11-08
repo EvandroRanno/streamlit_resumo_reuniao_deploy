@@ -33,7 +33,7 @@ def transcricao(file):
     return transcricao
 
 def transcrever_tab_aud():
-    arquivo_audio = st.file_uploader('Faça o upload de um arquivo de áudio em formato MP3 para transcrição', type=['mp3'])
+    arquivo_audio = st.file_uploader('Faça o upload de um arquivo de áudio em formato MP3 para transcrição', type=['mp3', 'm4a'])
 
     if arquivo_audio is not None:
         transcricao_text = transcricao(arquivo_audio)
