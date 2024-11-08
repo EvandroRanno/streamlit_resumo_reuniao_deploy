@@ -29,9 +29,7 @@ Para executar este projeto, os seguintes pacotes e bibliotecas são necessários
 - Python 3.10 ou superior
 - Bibliotecas Python:
   - `streamlit`
-  - `streamlit-webrtc`
   - `moviepy`
-  - `pydub`
   - `openai`
   - `PyPDF2`
   - `dotenv`
