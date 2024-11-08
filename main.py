@@ -1,12 +1,8 @@
 from pathlib import Path
-import queue
-from time import sleep, time
 import openai
 from dotenv import load_dotenv, find_dotenv
 import streamlit as st
-from streamlit_webrtc import WebRtcMode, webrtc_streamer
 from moviepy.editor import VideoFileClip
-import pydub
 from tempfile import gettempdir
 import pdfplumber
 from re import sub
@@ -20,7 +16,6 @@ PASTA_TEMP = Path(gettempdir())
 PASTA_TEMP.mkdir(exist_ok=True)
 ARQUIVO_AUDIO_TEMP = PASTA_TEMP / 'audio_temp.mp3'
 ARQUIVO_VIDEO_TEMP = PASTA_TEMP / 'video_temp.mp4'
-ARQUIVO_MICROFONE_TEMP = PASTA_TEMP / 'microfone_temp.mp3'
 
 #Carregar API
 client = openai.OpenAI()
@@ -36,58 +31,6 @@ def transcricao(file):
             prompt=prompt
         )
     return transcricao
-
-@st.cache_data
-def get_ice_servers():
-    return [{'urls': ['stun:stun.l.google.com:19302']}]
-
-def transcrever_tab_mic():
-    st.markdown('Transcrição do áudio do microfone em tempo real')
-    webrtc = webrtc_streamer(
-        key='recebe_audio',
-        mode=WebRtcMode.SENDONLY,
-        audio_receiver_size=1024,
-        rtc_configuration={'iceServers': get_ice_servers()},
-        media_stream_constraints={'video': False, 'audio': True},
-        translations={'start': 'Iniciar', 'stop': 'Parar'}
-    )
-
-    if not webrtc.state.playing:
-        return
-    
-    container = st.empty()
-    container.markdown('**Transcrição iniciada**')
-    chunck_audio = pydub.AudioSegment.empty()
-    tempo_ultima_transcricao = time()
-    while True:
-        if webrtc.audio_receiver:
-            try:
-                audio_frames = webrtc.audio_receiver.get_frames(timeout=1)
-            except queue.Empty:
-                sleep(0.1)
-                continue
-
-            for audio_frame in audio_frames:
-                sound = pydub.AudioSegment(
-                    data=audio_frame.to_ndarray().tobytes(),
-                    sample_width=audio_frame.format.bytes,
-                    frame_rate=audio_frame.rate,
-                    channels=len(audio_frame.layout.channels)
-                )
-                chunck_audio += sound
-            
-            agora = time()
-            
-            if len(chunck_audio) > 0 and agora - tempo_ultima_transcricao > 5:
-                tempo_ultima_transcricao = agora
-                chunck_audio.export(ARQUIVO_MICROFONE_TEMP, format='mp3')
-                chunck_audio = pydub.AudioSegment.empty() #Reinicia para nova gravação
-
-                with open(ARQUIVO_MICROFONE_TEMP, 'rb') as audio_f:
-                    transcricao_text = transcricao(audio_f)
-                    container.write(transcricao_text)
-        else:
-            break
 
 def transcrever_tab_aud():
     arquivo_audio = st.file_uploader('Faça o upload de um arquivo de áudio em formato MP3 para transcrição', type=['mp3'])
@@ -199,9 +142,7 @@ def gerar_resumo(texto, tipo):
 def main():
     st.header(body='Projeto Integrador :red[IV] - URI Erechim ⚖️', anchor=False, divider='orange')
     st.markdown(body='💻 **Integrantes:** Ademir, Ana M., Denis, Evandro, :rainbow[***João***], Kauan, Lucas e Lucimar')
-    tab_mic, tab_aud, tab_vid, tab_peticao_inicial = st.tabs(['Microfone', 'Áudio', 'Vídeo', 'Petição Inicial'])
-    with tab_mic:
-        transcrever_tab_mic()
+    tab_aud, tab_vid, tab_peticao_inicial = st.tabs(['Áudio', 'Vídeo', 'Petição Inicial'])
     with tab_aud:
         transcrever_tab_aud()
     with tab_vid:
