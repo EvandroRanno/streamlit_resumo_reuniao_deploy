@@ -12,11 +12,7 @@ Este projeto foi desenvolvido para o **Projeto Integrador IV** do curso de Direi
    - Transcrição de arquivos de áudio em formato **MP3** e vídeos em formato **MP4**.
    - Resumo automático dos áudios e vídeos transcritos, destacando pontos importantes e decisões.
 
-### 2. **Transcrição de Áudio em Tempo Real**
-   - Realiza a transcrição em tempo real do áudio capturado pelo microfone.
-   - O áudio transcrito é exibido imediatamente na interface do Streamlit.
-
-### 3. **Extração de Informações de Petições em PDF**
+### 2. **Extração de Informações de Petições em PDF**
    - Upload de arquivos **PDF** contendo petições iniciais.
    - O texto da petição é processado e extraído automaticamente.
    - O sistema fornece um resumo da petição, além de identificar algumas informações para auxiliar no preenchimento pelo advogado.
