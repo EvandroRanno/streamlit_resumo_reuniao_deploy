@@ -6,9 +6,6 @@ from moviepy.editor import VideoFileClip
 from tempfile import gettempdir
 import pdfplumber
 from re import sub
-import os
-import tempfile
-import subprocess
 
 
 #Carregar variáveis de ambiente
@@ -35,64 +32,14 @@ def transcricao(file):
         )
     return transcricao
 
-def converter_m4a_para_mp3(caminho_arquivo_m4a):
-    try:
-        # Clonando o FFmpeg (somente uma vez, se necessário)
-        if not os.path.exists('ffmpeg'):
-            subprocess.run(['git', 'clone', 'https://git.ffmpeg.org/ffmpeg.git', 'ffmpeg'])
-
-        # Compilando FFmpeg (caso ainda não tenha sido feito)
-        if not os.path.exists('./ffmpeg/fftools/ffmpeg'):
-            subprocess.run(['make'], cwd='./ffmpeg', check=True)
-
-        # Definindo caminho do FFmpeg compilado
-        ffmpeg_bin = './ffmpeg/fftools/ffmpeg'
-
-        # Definindo o caminho de saída do arquivo MP3
-        caminho_mp3 = caminho_arquivo_m4a.replace('.m4a', '.mp3')
-
-        # Executando a conversão
-        subprocess.run([ffmpeg_bin, '-i', caminho_arquivo_m4a, caminho_mp3], check=True)
-        return caminho_mp3
-    except Exception as e:
-        st.error(f"Erro na conversão: {e}")
-        return None
-
 def transcrever_tab_aud():
-    arquivo_audio = st.file_uploader('Faça o upload de um arquivo de áudio em formato MP3 ou M4A para transcrição', type=['mp3', 'm4a'])
+    arquivo_audio = st.file_uploader('Faça o upload de um arquivo de áudio em formato MP3 para transcrição', type=['mp3', 'm4a'])
 
     if arquivo_audio is not None:
-        # Salvar o arquivo temporariamente
-        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{arquivo_audio.type.split('/')[-1]}") as temp_audio_file:
-            temp_audio_file.write(arquivo_audio.read())
-            temp_audio_path = temp_audio_file.name
-
-        # Verificar se o arquivo é .m4a e realizar a conversão
-        if temp_audio_path.endswith('.m4a'):
-            st.write("Convertendo arquivo de M4A para MP3...")
-            temp_mp3_path = converter_m4a_para_mp3(temp_audio_path)
-            if temp_mp3_path is None:
-                st.error("Falha na conversão de M4A para MP3.")
-                return
-            arquivo_convertido = temp_mp3_path
-        else:
-            arquivo_convertido = temp_audio_path
-
-        # Realizar a transcrição diretamente com o arquivo convertido
-        try:
-            with open(arquivo_convertido, 'rb') as audio_file:
-                transcricao_text = transcricao(audio_file)  # Chama a função de transcrição
-                if transcricao_text:
-                    resumo_text = gerar_resumo(transcricao_text, 'transcricao')  # Chama a função de resumo
-                    st.write('**Transcrição:**', transcricao_text)
-                    st.write(resumo_text)
-        except Exception as e:
-            st.error(f"Erro ao processar a transcrição: {e}")
-        
-        # Limpar os arquivos temporários
-        os.remove(temp_audio_path)
-        if arquivo_convertido != temp_audio_path:
-            os.remove(arquivo_convertido)
+        transcricao_text = transcricao(arquivo_audio)
+        resumo_text = gerar_resumo(transcricao_text, 'transcricao')
+        st.write('**Transcrição:**', transcricao_text)
+        st.write(resumo_text)
 
 def transcrever_tab_vid():
     arquivo_video = st.file_uploader('Faça o upload de um arquivo de vídeo em formato MP4 ou MOV para transcrição', type=['mp4', 'mov'])
