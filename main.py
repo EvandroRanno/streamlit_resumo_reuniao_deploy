@@ -6,6 +6,9 @@ from moviepy.editor import VideoFileClip
 from tempfile import gettempdir
 import pdfplumber
 from re import sub
+import tempfile
+from pydub import AudioSegment
+import os
 
 
 #Carregar variáveis de ambiente
@@ -33,13 +36,36 @@ def transcricao(file):
     return transcricao
 
 def transcrever_tab_aud():
-    arquivo_audio = st.file_uploader('Faça o upload de um arquivo de áudio em formato MP3 para transcrição', type=['mp3', 'm4a'])
+    arquivo_audio = st.file_uploader('Faça o upload de um arquivo de áudio em formato MP3 ou M4A para transcrição', type=['mp3', 'm4a'])
 
     if arquivo_audio is not None:
-        transcricao_text = transcricao(arquivo_audio)
-        resumo_text = gerar_resumo(transcricao_text, 'transcricao')
-        st.write('**Transcrição:**', transcricao_text)
+        # Salvar o arquivo temporariamente
+        with tempfile.NamedTemporaryFile(delete=False, suffix=f".{arquivo_audio.type.split('/')[-1]}") as temp_audio_file:
+            temp_audio_file.write(arquivo_audio.read())
+            temp_audio_path = temp_audio_file.name
+
+        # Verificar se é um arquivo .m4a e converter para .mp3
+        if arquivo_audio.type == 'audio/m4a':
+            audio = AudioSegment.from_file(temp_audio_path, format='m4a')
+            temp_mp3_path = temp_audio_path.replace('.m4a', '.mp3')
+            audio.export(temp_mp3_path, format='mp3')
+            arquivo_convertido = temp_mp3_path
+        else:
+            arquivo_convertido = temp_audio_path
+
+        # Realizar a transcrição com o arquivo convertido
+        with open(arquivo_convertido, 'rb') as audio_file:
+            transcricao_text = transcricao(audio_file)  # Função de transcrição
+            resumo_text = gerar_resumo(transcricao_text, 'transcricao')  # Função de resumo
+
+        # Exibir os resultados
+        st.write('**Transcrição:**', transcricao_text)
         st.write(resumo_text)
+
+        # Limpar os arquivos temporários
+        os.remove(temp_audio_path)
+        if arquivo_convertido != temp_audio_path:
+            os.remove(arquivo_convertido)
 
 def transcrever_tab_vid():
     arquivo_video = st.file_uploader('Faça o upload de um arquivo de vídeo em formato MP4 ou MOV para transcrição', type=['mp4', 'mov'])
