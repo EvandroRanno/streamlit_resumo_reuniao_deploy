@@ -141,7 +141,7 @@ def gerar_resumo(texto, tipo):
 
 def main():
     st.header(body='Projeto Integrador :red[IV] - URI Erechim ⚖️', anchor=False, divider='orange')
-    st.markdown(body='💻 **Integrantes:** Ademir, Ana M., Denis, Evandro, :rainbow[***João***], Kauan, Lucas e Lucimar')
+    st.markdown(body='💻 **Integrantes:** Ademir, Ana M., Denis, Evandro, João, Kauan, Lucas e Lucimar')
     tab_aud, tab_vid, tab_peticao_inicial = st.tabs(['Áudio', 'Vídeo', 'Petição Inicial'])
     with tab_aud:
         transcrever_tab_aud()
